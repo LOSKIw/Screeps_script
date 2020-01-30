@@ -1,39 +1,44 @@
 var roleHarvester = require('role.harvester');
 var roleUpgrader = require('role.upgrader');
 var roleBuilder = require('role.builder');
-var createCreeps = require('role.create');
+var roleRepairer = require('role.repairer');
+var SpawnFuntion = require('Spawn');
+var Tower = require('tower')
 
 module.exports.loop = function () {
-
-    createCreeps.run();
-    var workList=new Array(0,0,0,0);
-    
-    var tower = _.filter(Game.structures,struct=>struct.toString=='Tower');
-    
-    
-    
-    for(var name in Game.creeps) {
-        for(var i=0;i<4;i++){
-            if( i == 2 )
-                continue;
-            if( i == 3 &&workList[i] < 1){
-                workList[i]++;
-                break;
-            }
-            else if(i != 3 && workList[i] < 3){
-                workList[i]++;
-                break;
-            }
+    var creepsNumList = [0,0];
+    for(var name in Memory.creeps) {
+        if(!Game.creeps[name]) {
+            delete Memory.creeps[name];
+            console.log('Clearing non-existing creep memory:', name);
+            continue;
         }
+        creepsNumList[Memory.creeps[name].workloc] = creepsNumList[Memory.creeps[name].workloc] + 1;
+    }
+    
+    //console.log(creepsNumList);
+
+    var spawn1 = Game.spawns['Spawn1'];
+    creepsNumList = SpawnFuntion.run(spawn1,creepsNumList);
+
+    for(var name in Game.creeps) {
         var creep = Game.creeps[name];
         if(creep.memory.role == 'harvester') {
-            roleHarvester.run(creep,i);
+            roleHarvester.run(creep);
         }
         if(creep.memory.role == 'upgrader') {
-            roleUpgrader.run(creep,i);
+            roleUpgrader.run(creep);
         }
         if(creep.memory.role == 'builder') {
-            roleBuilder.run(creep,i);
+            roleBuilder.run(creep);
         }
+        if(creep.memory.role == 'repairer'){
+            roleRepairer.run(creep);
+        }
+    }
+
+    var towerList = _.filter(Game.structures, s => s.structureType == STRUCTURE_TOWER);
+    for(var tower of towerList){
+        Tower.run(tower);
     }
 }
